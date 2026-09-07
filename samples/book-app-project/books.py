@@ -59,13 +59,29 @@ class BookCollection:
         return False
 
     def remove_book(self, title: str) -> bool:
-        """Remove a book by title."""
-        book = self.find_book_by_title(title)
-        if book:
-            self.books.remove(book)
-            self.save_books()
-            return True
-        return False
+        """Remove the first exact, case-insensitive title match.
+
+        Returns True when a book is removed and False when the title is
+        invalid or no matching book exists.
+        """
+        if not isinstance(title, str) or not title.strip():
+            return False
+
+        normalized_title = title.strip().casefold()
+        book = next(
+            (
+                candidate
+                for candidate in self.books
+                if candidate.title.strip().casefold() == normalized_title
+            ),
+            None,
+        )
+        if book is None:
+            return False
+
+        self.books.remove(book)
+        self.save_books()
+        return True
 
     def find_by_author(self, author: str) -> List[Book]:
         """Find all books by a given author."""
