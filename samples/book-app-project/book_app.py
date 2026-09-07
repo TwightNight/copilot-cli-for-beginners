@@ -1,65 +1,70 @@
 import sys
 from books import BookCollection
+from utils import print_books
 
 
 # Global collection instance
 collection = BookCollection()
 
 
-def show_books(books):
-    """Display books in a user-friendly format."""
-    if not books:
-        print("No books found.")
-        return
-
-    print("\nYour Book Collection:\n")
-
-    for index, book in enumerate(books, start=1):
-        status = "✓" if book.read else " "
-        print(f"{index}. [{status}] {book.title} by {book.author} ({book.year})")
-
-    print()
-
-
-def handle_list():
+def handle_list() -> None:
+    """Display all books in the collection."""
     books = collection.list_books()
-    show_books(books)
+    print_books(books)
 
 
-def handle_add():
+def handle_add() -> None:
+    """Prompt user to add a new book to the collection."""
     print("\nAdd a New Book\n")
 
     title = input("Title: ").strip()
     author = input("Author: ").strip()
     year_str = input("Year: ").strip()
 
+    if not title or not author:
+        print("\nError: Title and author cannot be empty.\n")
+        return
+
     try:
         year = int(year_str) if year_str else 0
         collection.add_book(title, author, year)
         print("\nBook added successfully.\n")
-    except ValueError as e:
-        print(f"\nError: {e}\n")
+    except ValueError:
+        print("\nError: Year must be a valid number.\n")
 
 
-def handle_remove():
+def handle_remove() -> None:
+    """Prompt user to remove a book from the collection by title."""
     print("\nRemove a Book\n")
 
     title = input("Enter the title of the book to remove: ").strip()
-    collection.remove_book(title)
 
-    print("\nBook removed if it existed.\n")
+    if not title:
+        print("\nError: Title cannot be empty.\n")
+        return
+
+    if collection.remove_book(title):
+        print("\nBook removed successfully.\n")
+    else:
+        print("\nBook not found.\n")
 
 
-def handle_find():
+def handle_find() -> None:
+    """Prompt user to find books by author."""
     print("\nFind Books by Author\n")
 
     author = input("Author name: ").strip()
+
+    if not author:
+        print("\nError: Author name cannot be empty.\n")
+        return
+
     books = collection.find_by_author(author)
+    print_books(books)
 
-    show_books(books)
 
-
-def show_help():
+def show_help() -> None:
+    """Display help message with available commands."""
     print("""
 Book Collection Helper
 
@@ -72,23 +77,26 @@ Commands:
 """)
 
 
-def main():
+def main() -> None:
+    """Parse command-line arguments and dispatch to appropriate handler."""
     if len(sys.argv) < 2:
         show_help()
         return
 
     command = sys.argv[1].lower()
 
-    if command == "list":
-        handle_list()
-    elif command == "add":
-        handle_add()
-    elif command == "remove":
-        handle_remove()
-    elif command == "find":
-        handle_find()
-    elif command == "help":
-        show_help()
+    commands: dict[str, callable] = {
+        "list": handle_list,
+        "add": handle_add,
+        "remove": handle_remove,
+        "find": handle_find,
+        "help": show_help,
+    }
+
+    handler = commands.get(command)
+
+    if handler:
+        handler()
     else:
         print("Unknown command.\n")
         show_help()
