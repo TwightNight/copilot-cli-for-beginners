@@ -1,3 +1,4 @@
+import csv
 import json
 from dataclasses import dataclass, asdict
 from typing import List, Optional
@@ -43,6 +44,28 @@ class BookCollection:
 
     def list_books(self) -> List[Book]:
         return self.books
+
+    def export_to_csv(self, destination: str = "export.csv") -> None:
+        """Export the collection to a CSV file.
+
+        The CSV contains the collection's books in their current order and
+        preserves the model's boolean read values as ``True`` or ``False``.
+        Existing destination files are overwritten.
+        """
+        if not isinstance(destination, str) or not destination.strip():
+            raise ValueError("CSV destination must be a non-empty path.")
+
+        with open(destination, "w", newline="", encoding="utf-8") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(["title", "author", "year", "read"])
+            writer.writerows(
+                (book.title, book.author, book.year, book.read)
+                for book in self.books
+            )
+
+    def list_unread_books(self) -> List[Book]:
+        """Return books that have not been marked as read."""
+        return [book for book in self.books if not book.read]
 
     def find_book_by_title(self, title: str) -> Optional[Book]:
         for book in self.books:

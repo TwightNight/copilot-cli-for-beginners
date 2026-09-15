@@ -1,3 +1,4 @@
+import csv
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -62,6 +63,67 @@ class TestAddBook:
         collection.add_book("Title", "Author B", 2001)
         
         assert len(collection.books) == 2
+
+
+class TestExportToCsv:
+    """Tests for exporting collections to CSV."""
+
+    def test_export_to_csv_writes_book_data(self, tmp_path):
+        """Test exporting books with their read status and CSV quoting."""
+        collection = BookCollection()
+        collection.add_book("A, title", 'Author "One"', 2020)
+        collection.add_book("Read book", "Author Two", 2021)
+        collection.mark_as_read("Read book")
+        destination = tmp_path / "books.csv"
+
+        collection.export_to_csv(str(destination))
+
+        with destination.open(newline="", encoding="utf-8") as csv_file:
+            rows = list(csv.DictReader(csv_file))
+
+        assert rows == [
+            {
+                "title": "A, title",
+                "author": 'Author "One"',
+                "year": "2020",
+                "read": "False",
+            },
+            {
+                "title": "Read book",
+                "author": "Author Two",
+                "year": "2021",
+                "read": "True",
+            },
+        ]
+
+    def test_export_to_csv_writes_header_for_empty_collection(self, tmp_path):
+        """Test exporting an empty collection writes only the CSV header."""
+        collection = BookCollection()
+        destination = tmp_path / "empty.csv"
+
+        collection.export_to_csv(str(destination))
+
+        with destination.open(newline="", encoding="utf-8") as csv_file:
+            rows = list(csv.reader(csv_file))
+
+        assert rows == [["title", "author", "year", "read"]]
+
+    def test_export_to_csv_propagates_file_write_error(
+        self, monkeypatch, tmp_path
+    ):
+        """Test that file-system write errors are not silently swallowed."""
+        collection = BookCollection()
+        destination = tmp_path / "books.csv"
+
+        def raise_write_error(*args, **kwargs):
+            raise OSError("disk full")
+
+        monkeypatch.setattr(
+            books, "open", raise_write_error, raising=False
+        )
+
+        with pytest.raises(OSError, match="disk full"):
+            collection.export_to_csv(str(destination))
 
 
 class TestRemoveBook:
