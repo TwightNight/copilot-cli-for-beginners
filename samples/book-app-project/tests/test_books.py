@@ -399,6 +399,22 @@ class TestMarkAsRead:
         assert collection.find_book_by_title("Book 2").read is True
 
 
+class TestListUnreadBooks:
+    """Tests for listing unread books."""
+
+    def test_list_unread_books_returns_only_unread_books_in_order(self):
+        """Test filtering unread books while preserving collection order."""
+        collection = BookCollection()
+        collection.add_book("Unread 1", "Author A", 2000)
+        collection.add_book("Read", "Author B", 2001)
+        collection.add_book("Unread 2", "Author C", 2002)
+        collection.mark_as_read("Read")
+
+        books = collection.list_unread_books()
+
+        assert [book.title for book in books] == ["Unread 1", "Unread 2"]
+
+
 class TestEmptyCollection:
     """Tests for edge cases with empty collection."""
 
@@ -408,6 +424,14 @@ class TestEmptyCollection:
         
         books = collection.list_books()
         
+        assert books == []
+
+    def test_list_unread_books_empty_collection(self):
+        """Test listing unread books in empty collection."""
+        collection = BookCollection()
+
+        books = collection.list_unread_books()
+
         assert books == []
 
     def test_find_by_title_empty_collection(self):

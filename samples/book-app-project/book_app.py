@@ -1,4 +1,5 @@
 import sys
+from datetime import date
 from books import BookCollection
 from utils import print_books
 
@@ -10,6 +11,16 @@ collection = BookCollection()
 def handle_list() -> None:
     """Display all books in the collection."""
     books = collection.list_books()
+    print_books(books)
+
+
+def handle_unread() -> None:
+    """Display books that have not been marked as read."""
+    books = collection.list_unread_books()
+    if not books:
+        print("No unread books found.")
+        return
+
     print_books(books)
 
 
@@ -25,12 +36,22 @@ def handle_add() -> None:
         print("\nError: Title and author cannot be empty.\n")
         return
 
+    if not year_str:
+        print("\nError: Year cannot be empty.\n")
+        return
+
     try:
-        year = int(year_str) if year_str else 0
-        collection.add_book(title, author, year)
-        print("\nBook added successfully.\n")
+        year = int(year_str)
     except ValueError:
         print("\nError: Year must be a valid number.\n")
+        return
+
+    if year < 1 or year > date.today().year:
+        print(f"\nError: Year must be between 1 and {date.today().year}.\n")
+        return
+
+    collection.add_book(title, author, year)
+    print("\nBook added successfully.\n")
 
 
 def handle_remove() -> None:
@@ -70,6 +91,7 @@ Book Collection Helper
 
 Commands:
   list     - Show all books
+  unread   - Show unread books
   add      - Add a new book
   remove   - Remove a book by title
   find     - Find books by author
@@ -87,6 +109,7 @@ def main() -> None:
 
     commands: dict[str, callable] = {
         "list": handle_list,
+        "unread": handle_unread,
         "add": handle_add,
         "remove": handle_remove,
         "find": handle_find,
